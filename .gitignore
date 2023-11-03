@@ -1,6 +1,9 @@
 # Sample files
 SAMPLE*
 
+# Emacs
+*~
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

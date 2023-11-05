@@ -31,14 +31,76 @@ def process_args():
     
     return(args.input, args.output)
 
-def name_from_customer_description(cd):
-    return cd[:cd.find('(') - 1]
+def name(card_name, shipping_name):
+    return 'name'
 
-def order_number_from_customer_description(cd):
-    return cd[cd.find('#') + 1:cd.find(')')]
+def street_1(card_street_1, shipping_street_1):
+    return 'street_1'
+
+def street_2(card_street_2, shipping_street_2):
+    return 'street_2'
+
+def city(card_city, shipping_city):
+    return 'city'
+
+def state(card_state, shipping_state):
+    return 'state'
+
+def zip(card_zip, shipping_zip):
+    return 'zip'
+
+def country(card_country, shipping_country):
+    return 'country'
+
+def quantity(description):
+    return 'quantity'
+
+def weight(description):
+    return 'weight'
+
+def total(total_items):
+    return 'total'
+
+def const(c):
+    return c
+
+
+field_map = {
+    # 'output': 'input',
+    'Order Number': 'WF Order Id (metadata)',
+    'Order Date': 'Created (UTC)',
+    'Recipient Name': name('Card Name', 'Shipping Name'),
+    'Company': None,
+    'Email': 'Customer Email',
+    'Phone': None,
+    'Street Line 1': street_1('Card Address Line1', 'Shipping Address Line1'),
+    'Street Number': None,
+    'Street Line 2': street_2('Card Address Line2', 'Shipping Address Line2'),
+    'City': city('Card Address City', 'Shipping Address City'),
+    'State/Province': state('Card Address State', 'Shipping Address State'),
+    'Zip/Postal Code': zip('Card Address Postal Code',
+                           'Shipping Address Postal Code'),
+    'Country': country('Card Address Country', 'Shipping Address Country'),
+    'Item Title': None,
+    'SKU': None,
+    'Quantity': quantity('Description'),
+    'Item Weight': const(2.2), # CONFIRM
+    'Item Weight Unit': const('lb'),
+    'Item Price': const(45),
+    'Item Currency': const('USD'),
+    'Order Weight': weight(quantity('Description')),
+    'Order Weight Unit': const('lb'),
+    'Order Amount': total(quantity('Desciption')),
+    'Order Currency': const('USD')
+}
+    
 
 def process_row(input_row, output_file):
-    output_file.write(input_row['Customer Description'] + '\n')
+    for field in field_map:
+        val = field_map[field]
+        print(val, end=", ")
+    print('')
+    # output_file.write(input_row['Customer Description'] + '\n')
 
 if __name__ == '__main__':
 
@@ -53,7 +115,6 @@ if __name__ == '__main__':
     r = csv.DictReader(f_in)
     for row in r:
         process_row(row, f_out)
-
 
     # Cleanup
     f_in.close()

@@ -4,6 +4,11 @@ import sys
 import os
 import argparse
 import csv
+import decimal
+
+ITEM_WEIGHT = 2.45
+ITEM_PRICE = 45
+ITEM_TITLE = 'Martani 2023'
 
 def process_args():
     '''
@@ -31,76 +36,157 @@ def process_args():
     
     return(args.input, args.output)
 
-def name(card_name, shipping_name):
-    return 'name'
+def name(input_row, card_name, shipping_name):
+    result = input_row[shipping_name]
+    if result == '':
+        result = input_row[card_name]
+    return result
 
-def street_1(card_street_1, shipping_street_1):
-    return 'street_1'
+def street_1(input_row, card_street_1, shipping_street_1):
+    result = input_row[shipping_street_1]
+    if result == '':
+        result = input_row[card_street_1]
+    return result
 
-def street_2(card_street_2, shipping_street_2):
-    return 'street_2'
+def street_2(input_row, card_street_2, shipping_street_2):
+    result = input_row[shipping_street_2]
+    if result == '':
+        result = input_row[card_street_2]
+    return result
 
-def city(card_city, shipping_city):
-    return 'city'
+def city(input_row, card_city, shipping_city):
+    result = input_row[shipping_city]
+    if result == '':
+        result = input_row[card_city]
+    return result
 
-def state(card_state, shipping_state):
-    return 'state'
+def state(input_row, card_state, shipping_state):
+    result = input_row[shipping_state]
+    if result == '':
+        result = input_row[card_state]
+    return result
 
-def zip(card_zip, shipping_zip):
-    return 'zip'
+def zip(input_row, card_zip, shipping_zip):
+    result = input_row[shipping_zip]
+    if result == '':
+        result = input_row[card_zip]
+    return result
 
-def country(card_country, shipping_country):
-    return 'country'
+def country(input_row, card_country, shipping_country):
+    result = input_row[shipping_country]
+    if result == '':
+        result = input_row[card_country]
+    return result
 
-def quantity(description):
-    return 'quantity'
+def quantity(input_row, description):
+    """Extract the quantity from the description."""
+    result = 0
 
-def weight(description):
-    return 'weight'
+    d = input_row[description]
+    start = d.index('x') + 1
+    end = d.index('=')
+    num = d[start:end]
+    result = int(num.strip())
+    
+    return result
 
-def total(total_items):
-    return 'total'
+def weight(input_row, description):
+    result = 0
 
-def const(c):
+    num_items = quantity(input_row, description)
+    result = round((ITEM_WEIGHT * num_items), 2)
+    
+    return result
+
+def total(input_row, description):
+    """Extract the total paid from the description. The result is a string."""
+    result = 0
+
+    d = input_row[description]
+    start = d.index('TOTAL:')
+    end = d.rindex('USD')
+    num = d[start + len('TOTAL: $'):end]
+    result = num.strip()
+
+    return result
+
+### TODO ... implement this function properly.
+import random
+def is_express_shipping(input_row, description):
+    random.seed()
+    return random.choice((True, False))
+
+def title(input_row, description):
+    result = ITEM_TITLE
+
+    if is_express_shipping(input_row, description):
+        result += ' **'
+    
+    return result
+
+def const(input_row, c):
     return c
 
+def executor(func, data):
+    return func(**data)
 
-field_map = {
+def get_output_data(input_row):
+    result = {}
+
+    for field in FIELD_MAP:
+        input_val = FIELD_MAP[field]
+        output_val = None
+        if input_val is None:
+            pass
+        elif isinstance(input_val, str):
+            output_val = input_row[input_val]
+        else: # a function
+            func = input_val[0]
+            args = input_val[1]
+            args['input_row'] = input_row
+            output_val = executor(func, args)
+        
+        result[field] = output_val
+
+    return result
+
+FIELD_MAP = {
     # 'output': 'input',
     'Order Number': 'WF Order Id (metadata)',
     'Order Date': 'Created (UTC)',
-    'Recipient Name': name('Card Name', 'Shipping Name'),
+    'Recipient Name': (name, {'card_name':'Card Name',
+                              'shipping_name':'Shipping Name'}),
     'Company': None,
     'Email': 'Customer Email',
     'Phone': None,
-    'Street Line 1': street_1('Card Address Line1', 'Shipping Address Line1'),
+    'Street Line 1': (street_1, {'card_street_1':'Card Address Line1',
+                                 'shipping_street_1':
+                                 'Shipping Address Line1'}),
     'Street Number': None,
-    'Street Line 2': street_2('Card Address Line2', 'Shipping Address Line2'),
-    'City': city('Card Address City', 'Shipping Address City'),
-    'State/Province': state('Card Address State', 'Shipping Address State'),
-    'Zip/Postal Code': zip('Card Address Postal Code',
-                           'Shipping Address Postal Code'),
-    'Country': country('Card Address Country', 'Shipping Address Country'),
-    'Item Title': None,
+    'Street Line 2': (street_2, {'card_street_2':'Card Address Line2',
+                                 'shipping_street_2':
+                                 'Shipping Address Line2'}),
+    'City': (city, {'card_city':'Card Address City',
+                    'shipping_city':'Shipping Address City'}),
+    'State/Province': (state, {'card_state':'Card Address State',
+                               'shipping_state':'Shipping Address State'}),
+    'Zip/Postal Code': (zip, {'card_zip':'Card Address Zip',
+                              'shipping_zip': 'Shipping Address Postal Code'}),
+    'Country': (country, {'card_country':'Card Address Country',
+                          'shipping_country':'Shipping Address Country'}),
+    # 'Item Title': (const, {'c':ITEM_TITLE}),
+    'Item Title': (title, {'description':'Description'}),
     'SKU': None,
-    'Quantity': quantity('Description'),
-    'Item Weight': const(2.2), # CONFIRM
-    'Item Weight Unit': const('lb'),
-    'Item Price': const(45),
-    'Item Currency': const('USD'),
-    'Order Weight': weight(quantity('Description')),
-    'Order Weight Unit': const('lb'),
-    'Order Amount': total(quantity('Desciption')),
-    'Order Currency': const('USD')
+    'Quantity': (quantity, {'description':'Description'}),
+    'Item Weight': (const, {'c':ITEM_WEIGHT}),
+    'Item Weight Unit': (const, {'c':'lb'}),
+    'Item Price': (const, {'c':ITEM_PRICE}),
+    'Item Currency': (const, {'c':'USD'}),
+    'Order Weight': (weight, {'description':'Description'}),
+    'Order Weight Unit': (const, {'c':'lb'}),
+    'Order Amount': (total, {'description':'Description'}),
+    'Order Currency': (const, {'c':'USD'})
 }
-    
-
-def process_row(input_row, output_file):
-    for field in field_map:
-        val = field_map[field]
-        print(val, end=", ")
-    print('')
-    # output_file.write(input_row['Customer Description'] + '\n')
 
 if __name__ == '__main__':
 
@@ -112,9 +198,12 @@ if __name__ == '__main__':
     # Read input and output files and process each line.
     f_in = open(input, 'r')
     f_out = open(output, 'w')
-    r = csv.DictReader(f_in)
+    r = csv.DictReader(f_in, dialect='excel')
+    w = csv.DictWriter(f_out, dialect='excel', fieldnames=FIELD_MAP.keys())
+
+    w.writeheader()
     for row in r:
-        process_row(row, f_out)
+        w.writerow(get_output_data(row))
 
     # Cleanup
     f_in.close()

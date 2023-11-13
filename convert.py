@@ -9,6 +9,7 @@ import decimal
 ITEM_WEIGHT = 2.45
 ITEM_PRICE = 45
 ITEM_TITLE = 'Martani 2023'
+MIN_EXPRESS_SHIPPING = 25
 
 def process_args():
     '''
@@ -110,11 +111,17 @@ def total(input_row, description):
 
     return result
 
-### TODO ... implement this function properly.
-import random
 def is_express_shipping(input_row, description):
-    random.seed()
-    return random.choice((True, False))
+    result = False
+
+    merch_value =  float(quantity(input_row, description)) * ITEM_PRICE
+    shipping_value = float(total(input_row, description)) - merch_value
+
+    if shipping_value >= MIN_EXPRESS_SHIPPING:
+        result = True
+
+    return result
+
 
 def title(input_row, description):
     result = ITEM_TITLE
